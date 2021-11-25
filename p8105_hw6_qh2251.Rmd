@@ -58,6 +58,8 @@ The data set contains `r nrow(df_raw)` observations and `r ncol(df_raw)` variabl
 # babysex: baby’s sex (male = 1, female = 2)
 # ppbmi: mother’s pre-pregnancy BMI
 # momage: mother’s age at delivery (years)
+
+#model 1 
 lm1 = lm(bwt ~ wtgain + smoken + parity + babysex + ppbmi + momage, data = df_tidy)
 
 summary(lm1)
@@ -81,3 +83,57 @@ df_tidy %>%
 To predict the value of birth weight，I include `wtgain`:mother's total weight gain, `smoken`: average number of cigarettes smoked per day during pregnancy , `parity` : number of live births prior to this pregnancy, `babysex` : baby’s sex (male = 1, female = 2), `ppbmi` : mother’s pre-pregnancy BMI, `momage` : mother’s age at delivery (years) in a linear model. I picked out these predictors according to a study done by Kari Johansson in 2007. Here is the [link](https://www.sciencedirect.com/science/article/pii/S1871403X07000622?via%3Dihub) to their interesting paper in predicting child's birth weight.
 
 We can see from the "Predicted vs. Residuals" plot that the average residuals is approximately 0 and the average predicted is around 3000.
+
+```{r}
+#model2: using length at birth and gestational age as predictors (main effects only)
+m2 = lm(bwt ~ blength + gaweeks, data = df_tidy) 
+summary(m2)
+
+#model3:using head circumference, length, sex, and all interactions (including the three-way interaction) between these
+m3 = lm(bwt ~ bhead * blength * babysex, data = df_tidy) 
+summary(m3)
+
+
+#cross validation
+#split in to train and test
+cv_df =
+  crossv_mc(df_tidy, 100) %>% 
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble))
+
+#calculating rmse
+cv_df = 
+  cv_df %>% 
+  mutate(
+    model1  = map(train, ~lm(bwt ~ wtgain + smoken + parity + babysex + ppbmi + momage, data = .x)),
+    model2  = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+    model3  = map(train, ~lm(bwt ~ bhead * blength * babysex, data = as_tibble(.x)))) %>% 
+  mutate(
+    rmse_m1 = map2_dbl(model1, test, ~rmse(model = .x, data = .y)),
+    rmse_m2 = map2_dbl(model2, test, ~rmse(model = .x, data = .y)),
+    rmse_m3 = map2_dbl(model3, test, ~rmse(model = .x, data = .y)))
+
+#result comparison
+result =  cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_")  %>% 
+  mutate(model = fct_inorder(model)) 
+
+# violin plot of rmse
+result%>% 
+  ggplot(aes(x = model, y = rmse)) + 
+  geom_violin()+
+  labs(
+    title = "model comparison",
+    x = "fitted models",
+    y = "RMSE"
+    ) 
+
+```
+
+The violin plot illustrates the root-mean-square error (RMSE) across models.We can see from the plot that model 1 is having largest rmse and model 3 has the smallest rmse which implies if we want to have more accurate prediction of child's birth weight we should use model 3 compairing with model 1 and 2.
