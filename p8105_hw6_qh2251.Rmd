@@ -210,7 +210,7 @@ bs_df %>%
     ) 
 ```
 
-The distribution of $log(\hat{\beta_{0}}\times\hat{\beta_{1}})$ is bell-shaped curve. The distribution peaks at approximately 2.01.
+The distribution of the log(beta0 * beta1) is bell-shaped curve. The distribution peaks at approximately 2.01.
 
 
 ```{r}
@@ -231,6 +231,6 @@ bs_df %>%
 
 ```
 
-We can see from above the 95% CI-Band for $\hat{r}^{2}$ is (0.89,0.93) according to bootstrap. The 95% CI-Band for $log(\hat{\beta_{0}}\times\hat{\beta_{1}})$ is (1.96,2.06) according to bootstrap. 
+We can see from above the 95% CI-Band for $\hat{r}^{2}$ is (0.89,0.93) according to bootstrap. The 95% CI-Band for the log function is (1.96,2.06) according to bootstrap. 
 
 
